@@ -36,6 +36,9 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.places.AutocompletePrediction;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.PlaceBuffer;
+import com.google.android.gms.location.places.PlaceFilter;
+import com.google.android.gms.location.places.PlaceLikelihood;
+import com.google.android.gms.location.places.PlaceLikelihoodBuffer;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -67,7 +70,7 @@ import java.util.List;
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback,
         GoogleApiClient.OnConnectionFailedListener, GoogleMap.OnPoiClickListener {
 
-    private static final String TAG = "MapActivity";
+    private static final String TAG = MapActivity.class.getSimpleName();
     private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
     private static final String COURSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
@@ -129,6 +132,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             places.release();
         }
     };
+
     private AdapterView.OnItemClickListener mAutocompleteClickListener = new AdapterView.OnItemClickListener() {
         @Override
         public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
@@ -145,9 +149,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
+        Log.e(TAG, "onConnectionFailed: " + connectionResult.getErrorMessage());
     }
 
+    //Give some informations about point of interest like market place or restaurant
     @Override
     public void onPoiClick(PointOfInterest poi) {
         Toast.makeText(getApplicationContext(), "Clicked: " +
@@ -193,6 +198,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         }
     }
 
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -211,6 +217,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private void init() {
         Log.d(TAG, "init: initializing");
 
+        //Usefull to connect to Places Api
         mGoogleApiClient = new GoogleApiClient
                 .Builder(this)
                 .addApi(Places.GEO_DATA_API)
@@ -241,6 +248,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             }
         });
 
+        //Get to your current location
         mGps.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -249,6 +257,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             }
         });
 
+        //Display info from a marker after searching a place
         mInfo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -266,6 +275,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             }
         });
 
+        //Google Place (Place Picker) functionality allow you collect info about poi
         mPlacePicker.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -282,6 +292,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             }
         });
 
+        //Open GoogleMap app and show you all restaurant nearby
         mRestaurant.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -295,8 +306,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             }
         });
 
+        //To activate the Poi options
         mMap.setOnPoiClickListener(this);
         hideSoftKeyboard();
+        currentPlace();
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -335,6 +348,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         }
     }
 
+    //Pretty obvious
     private void getDeviceLocation() {
         Log.d(TAG, "getDeviceLocation: getting the devices current location");
 
@@ -423,6 +437,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         mapFragment.getMapAsync(MapActivity.this);
     }
 
+    /*
+        --------------------------- google places API autocomplete suggestions -----------------
+     */
+
     private void getLocationPermission() {
         Log.d(TAG, "getLocationPermission: getting location permissions");
         String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION,
@@ -446,10 +464,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         }
     }
 
-    /*
-        --------------------------- google places API autocomplete suggestions -----------------
-     */
-
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         Log.d(TAG, "onRequestPermissionsResult: called.");
@@ -458,8 +472,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         switch (requestCode) {
             case LOCATION_PERMISSION_REQUEST_CODE: {
                 if (grantResults.length > 0) {
-                    for (int i = 0; i < grantResults.length; i++) {
-                        if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                    for (int grantResult : grantResults) {
+                        if (grantResult != PackageManager.PERMISSION_GRANTED) {
                             mLocationPermissionsGranted = false;
                             Log.d(TAG, "onRequestPermissionsResult: permission failed");
                             return;
@@ -476,6 +490,30 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     private void hideSoftKeyboard() {
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+    }
+
+    private void currentPlace() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        PendingResult<PlaceLikelihoodBuffer> result = Places.PlaceDetectionApi
+                .getCurrentPlace(mGoogleApiClient, null);
+        result.setResultCallback(new ResultCallback<PlaceLikelihoodBuffer>() {
+            @Override
+            public void onResult(@NonNull PlaceLikelihoodBuffer likelyPlaces) {
+                for (PlaceLikelihood placeLikelihood : likelyPlaces) {
+                    Log.i(TAG, String.format("Place '%s' has likelihood: %g and address: %s rating: %s",
+                            placeLikelihood.getPlace().getName(),
+                            placeLikelihood.getLikelihood(),
+                            placeLikelihood.getPlace().getAddress(),
+                            placeLikelihood.getPlace().getRating()));
+
+
+                }
+                likelyPlaces.release();
+            }
+        });
     }
 
 }
