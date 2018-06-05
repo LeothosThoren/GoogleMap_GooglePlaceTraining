@@ -89,6 +89,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private GoogleApiClient mGoogleApiClient;
     private PlaceInfo mPlace;
     private Marker mMarker;
+    private Place place;
 
 
     private ResultCallback<PlaceBuffer> mUpdatePlaceDetailsCallback = new ResultCallback<PlaceBuffer>() {
@@ -491,6 +492,11 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private void hideSoftKeyboard() {
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
     }
+
+    private void testPlaceFilter() {
+        place.getPlaceTypes().set(0, Place.TYPE_RESTAURANT);
+    }
+
 
     private void currentPlace() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
