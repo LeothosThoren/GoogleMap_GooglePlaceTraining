@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">GoogleMapGooglePlacesTraining</string>
+
+    <string name="google_maps_API_key">AIzaSyCeJDkfrGaaKnL6kpnvoFPPlOYCVJPrYkY</string>
+    <string name="button_map">Map</string>
+
+
+</resources>
