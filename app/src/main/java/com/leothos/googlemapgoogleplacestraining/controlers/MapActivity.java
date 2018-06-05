@@ -508,8 +508,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                             placeLikelihood.getLikelihood(),
                             placeLikelihood.getPlace().getAddress(),
                             placeLikelihood.getPlace().getRating()));
-
-
                 }
                 likelyPlaces.release();
             }
