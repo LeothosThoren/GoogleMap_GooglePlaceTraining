@@ -31,8 +31,10 @@ import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.places.AutocompleteFilter;
 import com.google.android.gms.location.places.AutocompletePrediction;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.PlaceBuffer;
@@ -40,7 +42,9 @@ import com.google.android.gms.location.places.PlaceFilter;
 import com.google.android.gms.location.places.PlaceLikelihood;
 import com.google.android.gms.location.places.PlaceLikelihoodBuffer;
 import com.google.android.gms.location.places.Places;
+import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
 import com.google.android.gms.location.places.ui.PlacePicker;
+import com.google.android.gms.location.places.ui.PlaceSelectionListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -90,7 +94,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private PlaceInfo mPlace;
     private Marker mMarker;
     private Place place;
-
 
     private ResultCallback<PlaceBuffer> mUpdatePlaceDetailsCallback = new ResultCallback<PlaceBuffer>() {
         @Override
@@ -226,6 +229,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 .enableAutoManage(this, this)
                 .build();
 
+        //To handle the TextInput
         mSearchText.setOnItemClickListener(mAutocompleteClickListener);
 
         mPlaceAutocompleteAdapter = new PlaceAutoCompleteAdapter(this, mGoogleApiClient,
@@ -309,8 +313,13 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         //To activate the Poi options
         mMap.setOnPoiClickListener(this);
+
         hideSoftKeyboard();
+
         currentPlace();
+
+        autocompleteTestDocumentation();
+
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -369,6 +378,13 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                                 moveCamera(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()),
                                         DEFAULT_ZOOM,
                                         "My Location");
+
+                                //Define the bound of the autocomplete search location
+//                                autocompleteFragment.setBoundsBias(new LatLngBounds(
+//                                        new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()),
+//                                        new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude())));
+
+
                             } catch (NullPointerException e) {
                                 Log.e(TAG, "onComplete: NullPointerException " + e.getMessage());
                             }
@@ -518,6 +534,33 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 likelyPlaces.release();
             }
         });
+    }
+
+    private void autocompleteTestDocumentation() {
+        PlaceAutocompleteFragment autocompleteFragment = (PlaceAutocompleteFragment)
+                getFragmentManager().findFragmentById(R.id.place_autocomplete_fragment);
+
+        autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+            @Override
+            public void onPlaceSelected(Place place) {
+                // TODO: Get info about the selected place.
+                Log.i(TAG, "Place: onPlaceSelected: " + place.getName());
+            }
+
+            @Override
+            public void onError(Status status) {
+                // TODO: Handle the error.
+                Log.i(TAG, "An error occurred: " + status);
+            }
+        });
+
+
+        AutocompleteFilter typeFilter = new AutocompleteFilter.Builder()
+                .setTypeFilter(AutocompleteFilter.TYPE_FILTER_GEOCODE)
+                .build();
+
+        autocompleteFragment.setFilter(typeFilter);
+
     }
 
 }
