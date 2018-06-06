@@ -379,11 +379,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                                         DEFAULT_ZOOM,
                                         "My Location");
 
-                                //Define the bound of the autocomplete search location
-//                                autocompleteFragment.setBoundsBias(new LatLngBounds(
-//                                        new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()),
-//                                        new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude())));
-
 
                             } catch (NullPointerException e) {
                                 Log.e(TAG, "onComplete: NullPointerException " + e.getMessage());
@@ -554,6 +549,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             }
         });
 
+        //Define the bound of the autocomplete search location
 
         AutocompleteFilter typeFilter = new AutocompleteFilter.Builder()
                 .setTypeFilter(AutocompleteFilter.TYPE_FILTER_GEOCODE)
