@@ -16,11 +16,15 @@ public class MainActivity extends AppCompatActivity {
 
     public static final int ERROR_DIALOG_REQUEST = 9003;
     private static final String TAG = "MainActivity";
+    Button btnMap;
+    Button btnScdMap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        btnMap = (Button) findViewById(R.id.btnMap);
+        btnScdMap = (Button) findViewById(R.id.btnScdMap);
 
         if (isServiceOk()) {
             init();
@@ -30,12 +34,20 @@ public class MainActivity extends AppCompatActivity {
 
     private void init() {
         //add something
-        Button btnMap = (Button) findViewById(R.id.btnMap);
+
         btnMap.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this, MapActivity.class);
                 startActivity(intent);
+            }
+        });
+
+        btnScdMap.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(MainActivity.this, SecondMapActivity.class);
+                startActivity(i);
             }
         });
 
@@ -57,5 +69,6 @@ public class MainActivity extends AppCompatActivity {
         dialog.show();
         return false;
     }
+
 
 }
