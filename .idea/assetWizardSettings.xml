@@ -34,7 +34,7 @@
                                           <PersistentState>
                                             <option name="values">
                                               <map>
-                                                <entry key="url" value="jar:file:/opt/android-studio/plugins/android/lib/android.jar!/images/material_design_icons/maps/ic_restaurant_black_24dp.xml" />
+                                                <entry key="url" value="jar:file:/opt/android-studio/plugins/android/lib/android.jar!/images/material_design_icons/maps/ic_person_pin_circle_black_24dp.xml" />
                                               </map>
                                             </option>
                                           </PersistentState>
@@ -44,9 +44,9 @@
                                   </option>
                                   <option name="values">
                                     <map>
-                                      <entry key="outputName" value="ic_nearby_restaurant" />
+                                      <entry key="outputName" value="ic_custom_marker" />
                                       <entry key="theme" value="CUSTOM" />
-                                      <entry key="themeColor" value="f9efed" />
+                                      <entry key="themeColor" value="41f924" />
                                     </map>
                                   </option>
                                 </PersistentState>
