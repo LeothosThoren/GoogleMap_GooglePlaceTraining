@@ -4,6 +4,9 @@
     <string name="google_maps_API_key">AIzaSyCeJDkfrGaaKnL6kpnvoFPPlOYCVJPrYkY</string>
     <string name="button_map">Map</string>
     <string name="button_second_map">Second Map</string>
+    <string name="place_infos">Place infos</string>
+    <string name="address_text">Text Adress</string>
+    <string name="no_place">No Places</string>
 
 
 </resources>
