@@ -95,48 +95,53 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private Marker mMarker;
     private Place place;
 
-    private ResultCallback<PlaceBuffer> mUpdatePlaceDetailsCallback = new ResultCallback<PlaceBuffer>() {
-        @Override
-        public void onResult(@NonNull PlaceBuffer places) {
-            if (!places.getStatus().isSuccess()) {
-                Log.d(TAG, "onResult: Place query did not complete successfully: " + places.getStatus().toString());
-                places.release();
-                return;
-            }
-            final Place place = places.get(0);
+    private ResultCallback<PlaceBuffer> mUpdatePlaceDetailsCallback;
+
+    {
+        mUpdatePlaceDetailsCallback = new ResultCallback<PlaceBuffer>() {
+            @Override
+            public void onResult(@NonNull PlaceBuffer places) {
+                if (!places.getStatus().isSuccess()) {
+                    Log.d(TAG, "onResult: Place query did not complete successfully: " + places.getStatus().toString());
+                    places.release();
+                    return;
+                }
+                final Place place = places.get(0);
 
 
-            try {
-                mPlace = new PlaceInfo();
-                mPlace.setName(place.getName().toString());
-                Log.d(TAG, "onResult: name: " + place.getName());
-                mPlace.setAddress(place.getAddress().toString());
-                Log.d(TAG, "onResult: address: " + place.getAddress());
+                try {
+                    mPlace = new PlaceInfo();
+                    mPlace.setName(place.getName().toString());
+                    Log.d(TAG, "onResult: name: " + place.getName());
+                    mPlace.setAddress(place.getAddress().toString());
+                    Log.d(TAG, "onResult: address: " + place.getAddress());
 //                mPlace.setAttributions(place.getAttributions().toString());
 //                Log.d(TAG, "onResult: attributions: " + place.getAttributions());
-                mPlace.setId(place.getId());
-                Log.d(TAG, "onResult: id:" + place.getId());
-                mPlace.setLatlng(place.getLatLng());
-                Log.d(TAG, "onResult: latlng: " + place.getLatLng());
-                mPlace.setRating(place.getRating());
-                Log.d(TAG, "onResult: rating: " + place.getRating());
-                mPlace.setPhoneNumber(place.getPhoneNumber().toString());
-                Log.d(TAG, "onResult: phone number: " + place.getPhoneNumber());
-                mPlace.setWebsiteUri(place.getWebsiteUri());
-                Log.d(TAG, "onResult: website uri: " + place.getWebsiteUri());
+                    mPlace.setId(place.getId());
+                    Log.d(TAG, "onResult: id:" + place.getId());
+                    mPlace.setLatlng(place.getLatLng());
+                    Log.d(TAG, "onResult: latlng: " + place.getLatLng());
+                    mPlace.setRating(place.getRating());
+                    Log.d(TAG, "onResult: rating: " + place.getRating());
+                    mPlace.setPhoneNumber(place.getPhoneNumber().toString());
+                    Log.d(TAG, "onResult: phone number: " + place.getPhoneNumber());
+                    mPlace.setWebsiteUri(place.getWebsiteUri());
+                    Log.d(TAG, "onResult: website uri: " + place.getWebsiteUri());
 
 
-                Log.d(TAG, "onResult: place: " + mPlace.toString());
-            } catch (NullPointerException e) {
-                Log.e(TAG, "onResult: NullPointerException: " + e.getMessage());
+                    Log.d(TAG, "onResult: place: " + mPlace.toString());
+                } catch (NullPointerException e) {
+                    Log.e(TAG, "onResult: NullPointerException: " + e.getMessage());
+                }
+
+                moveCamera(new LatLng(place.getViewport().getCenter().latitude,
+                        place.getViewport().getCenter().longitude), DEFAULT_ZOOM, mPlace);
+
+                places.release();
             }
+        };
 
-            moveCamera(new LatLng(place.getViewport().getCenter().latitude,
-                    place.getViewport().getCenter().longitude), DEFAULT_ZOOM, mPlace);
-
-            places.release();
-        }
-    };
+    }
 
     private AdapterView.OnItemClickListener mAutocompleteClickListener = new AdapterView.OnItemClickListener() {
         @Override
@@ -144,7 +149,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             hideSoftKeyboard();
 
             final AutocompletePrediction item = mPlaceAutocompleteAdapter.getItem(i);
-            final String placeId = item.getPlaceId();
+            final String placeId = item != null ? item.getPlaceId() : null;
 
             PendingResult<PlaceBuffer> placeResult = Places.GeoDataApi
                     .getPlaceById(mGoogleApiClient, placeId);

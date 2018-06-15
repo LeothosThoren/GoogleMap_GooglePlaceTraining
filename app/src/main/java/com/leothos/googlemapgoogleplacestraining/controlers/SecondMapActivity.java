@@ -61,6 +61,7 @@ public class SecondMapActivity extends AppCompatActivity implements OnMapReadyCa
     private String[] mLikelyPlaceName;
     private Integer[] mPlaceType;
     private LatLngBounds mLatLngBounds;
+    private Place place;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -210,9 +211,6 @@ public class SecondMapActivity extends AppCompatActivity implements OnMapReadyCa
         }
 
         if (mLocationPermissionGranted) {
-            // Get the likely places - that is, the businesses and other points of interest that
-            // are the best match for the device's current location.
-
             @SuppressWarnings("MissingPermission") final Task<PlaceLikelihoodBufferResponse> placeResult =
                     mPlaceDetectionClient.getCurrentPlace(null);
 
@@ -221,50 +219,9 @@ public class SecondMapActivity extends AppCompatActivity implements OnMapReadyCa
                 public void onComplete(@NonNull Task<PlaceLikelihoodBufferResponse> task) {
                     if (task.isSuccessful() && task.getResult() != null) {
                         PlaceLikelihoodBufferResponse likelyPlace = task.getResult();
-
-                        //Store maximum entries
-                        int count;
-                        Place place = null;
-                        if (likelyPlace.getCount() < MAX_PLACES) {
-                            count = likelyPlace.getCount();
-                        } else {
-                            count = MAX_PLACES;
-                        }
-
-                        //Inside this loop we put marker at all position we find
-                        int i = 0;
-                        mLikelyPlaceName = new String[count];
-                        mLikelyPlaceLatlng = new LatLng[count];
-//                        mPlaceType = new Integer[count];
-
-                        for (PlaceLikelihood placeLikelihood : likelyPlace) {
-                            place = placeLikelihood.getPlace();
-                            //Check if the nearest place are restaurants
-                            for (int j = 0; j < place.getPlaceTypes().size(); j++) {
-                                if (place.getPlaceTypes().get(j) == Place.TYPE_RESTAURANT) {
-                                    mLikelyPlaceName[i] = place.getName().toString();
-                                    mLikelyPlaceLatlng[i] = place.getLatLng();
-
-                                    //Add marker in every place found
-                                    if (mLikelyPlaceLatlng.length != 0) {
-                                        mMap.addMarker(new MarkerOptions()
-                                                .position(mLikelyPlaceLatlng[i])
-                                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_custom_marker)));
-
-                                        Log.d(TAG, "onComplete: show me Latlng marker" + mLikelyPlaceName[i]
-                                                + " " + mLikelyPlaceName[i]
-                                                + "\n" + place.getPlaceTypes());
-                                    }
-                                }
-                            }
-
-
-                            i++;
-                            if (i > (count - 1)) {
-                                break;
-                            }
-
-                        }
+                        //Find all point of interest of restaurant type
+                        findRestaurant(likelyPlace);
+                        //To avoid memory leaks
                         likelyPlace.release();
 
                     } else {
@@ -273,7 +230,6 @@ public class SecondMapActivity extends AppCompatActivity implements OnMapReadyCa
                 }
             });
         } else {
-            //User have not granted permission
             // The user has not granted permission.
             Log.d(TAG, "ShowProximityPlace => The user did not grant location permission.");
 
@@ -286,6 +242,53 @@ public class SecondMapActivity extends AppCompatActivity implements OnMapReadyCa
             // Prompt the user for permission.
             getLocationPermission();
 
+        }
+    }
+
+    private void findRestaurant(PlaceLikelihoodBufferResponse likelyPlace) {
+        //Store maximum entries
+        int count;
+        if (likelyPlace.getCount() < MAX_PLACES) {
+            count = likelyPlace.getCount();
+        } else {
+            count = MAX_PLACES;
+        }
+
+        //Add likelyPlace elements into arrays
+        int i = 0;
+        mLikelyPlaceName = new String[count];
+        mLikelyPlaceLatlng = new LatLng[count];
+
+        for (PlaceLikelihood placeLikelihood : likelyPlace) {
+            place = placeLikelihood.getPlace();
+            //Check if the nearest poi are restaurants
+            for (int j = 0; j < place.getPlaceTypes().size(); j++) {
+                if (place.getPlaceTypes().get(j) == Place.TYPE_RESTAURANT) {
+                    mLikelyPlaceName[i] = place.getName().toString();
+                    mLikelyPlaceLatlng[i] = place.getLatLng();
+
+                    //Add marker in every place found
+                    addMarkerOnMap(i);
+
+                    Log.d(TAG, "onComplete: show me Latlng marker: " + mLikelyPlaceName[i]
+                            + " " + mLikelyPlaceLatlng[i]
+                            + "\n" + place.getPlaceTypes());
+                }
+            }
+
+            i++;
+            if (i > (count - 1)) {
+                break;
+            }
+
+        }
+    }
+
+    private void addMarkerOnMap(int i) {
+        if (mLikelyPlaceLatlng.length != 0) {
+            mMap.addMarker(new MarkerOptions()
+                    .position(mLikelyPlaceLatlng[i])
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_custom_marker)));
         }
     }
 
