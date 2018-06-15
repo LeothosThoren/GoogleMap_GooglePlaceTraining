@@ -38,7 +38,6 @@ import com.google.android.gms.location.places.AutocompleteFilter;
 import com.google.android.gms.location.places.AutocompletePrediction;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.PlaceBuffer;
-import com.google.android.gms.location.places.PlaceFilter;
 import com.google.android.gms.location.places.PlaceLikelihood;
 import com.google.android.gms.location.places.PlaceLikelihoodBuffer;
 import com.google.android.gms.location.places.Places;
@@ -80,8 +79,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
     private static final float DEFAULT_ZOOM = 15f;
     private static final int PLACE_PICKER_REQUEST = 1;
-    private static final LatLngBounds LAT_LNG_BOUNDS = new LatLngBounds(
-            new LatLng(-40, -168), new LatLng(71, 136));
+    //    private static final LatLngBounds LAT_LNG_BOUNDS = new LatLngBounds(
+//            new LatLng(-40, -168), new LatLng(71, 136));
+    private static LatLngBounds LAT_LNG_BOUNDS;
     //widgets
     private AutoCompleteTextView mSearchText;
     private ImageView mGps, mInfo, mPlacePicker, mRestaurant;
@@ -104,6 +104,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 return;
             }
             final Place place = places.get(0);
+
 
             try {
                 mPlace = new PlaceInfo();
@@ -375,6 +376,12 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                             Log.d(TAG, "onComplete: found location!");
                             Location currentLocation = (Location) task.getResult();
                             try {
+
+                                //Define the bounds
+                                LAT_LNG_BOUNDS = new LatLngBounds(
+                                        new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()),
+                                        new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()));
+
                                 moveCamera(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()),
                                         DEFAULT_ZOOM,
                                         "My Location");

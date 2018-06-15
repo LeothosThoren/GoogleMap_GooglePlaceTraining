@@ -8,10 +8,16 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.Toast;
 
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.places.AutocompleteFilter;
+import com.google.android.gms.location.places.AutocompletePredictionBuffer;
 import com.google.android.gms.location.places.GeoDataClient;
+import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.PlaceDetectionClient;
 import com.google.android.gms.location.places.PlaceLikelihood;
 import com.google.android.gms.location.places.PlaceLikelihoodBufferResponse;
@@ -22,6 +28,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -36,8 +43,9 @@ public class SecondMapActivity extends AppCompatActivity implements OnMapReadyCa
 
     //CONSTANT
     public static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
-    public static final float DEFAULT_ZOOM = 18f;
+    public static final float DEFAULT_ZOOM = 15f;
     private static final String TAG = "SecondMapActivity";
+    private static final int MAX_PLACES = 30;
     List<PlaceInfo> mPlaceInfoList = new ArrayList<>();
     ArrayList<ProximityPlace> mProximityPlaces;
     //VAR
@@ -48,8 +56,11 @@ public class SecondMapActivity extends AppCompatActivity implements OnMapReadyCa
     private Location mLastKnownLocation;
     private boolean mLocationPermissionGranted;
     private LatLng mDefaultLocation = new LatLng(48.7927684, 2.3591994999999315);
+    private GoogleApiClient mGoogleApiClient;
     private LatLng[] mLikelyPlaceLatlng;
     private String[] mLikelyPlaceName;
+    private Integer[] mPlaceType;
+    private LatLngBounds mLatLngBounds;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,7 +83,7 @@ public class SecondMapActivity extends AppCompatActivity implements OnMapReadyCa
         getLocationPermission();
         getDeviceLocation();
         updateUI();
-        showProximityPlace();
+//        showProximityPlace();
 
 
     }
@@ -139,7 +150,7 @@ public class SecondMapActivity extends AppCompatActivity implements OnMapReadyCa
             if (mLocationPermissionGranted) {
                 mMap.setMyLocationEnabled(true);
                 mMap.getUiSettings().setMyLocationButtonEnabled(true);
-                showProximityPlace();
+//                showProximityPlace();
             } else {
                 mMap.setMyLocationEnabled(false);
                 mMap.getUiSettings().setMyLocationButtonEnabled(false);
@@ -163,9 +174,21 @@ public class SecondMapActivity extends AppCompatActivity implements OnMapReadyCa
                             // Set the map's camera position to the current location of the device.
                             mLastKnownLocation = task.getResult();
                             //Move camera toward device position
-                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                                    new LatLng(mLastKnownLocation.getLatitude(),
-                                            mLastKnownLocation.getLongitude()), DEFAULT_ZOOM));
+                            if (mLastKnownLocation != null) {
+
+                                //Define the bounds
+                                mLatLngBounds = new LatLngBounds(
+                                        new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude()),
+                                        new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude()));
+
+                                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                                        new LatLng(mLastKnownLocation.getLatitude(),
+                                                mLastKnownLocation.getLongitude()), DEFAULT_ZOOM));
+                                showProximityPlace();
+                            } else {
+                                Toast.makeText(SecondMapActivity.this, "Make sure your emulator device got map position on true", Toast.LENGTH_SHORT).show();
+                            }
+
                         } else {
                             Log.d(TAG, "Current location is null. Using defaults.");
                             Log.e(TAG, "getPhoneLocation => Exception: %s" + task.getException());
@@ -201,29 +224,40 @@ public class SecondMapActivity extends AppCompatActivity implements OnMapReadyCa
 
                         //Store maximum entries
                         int count;
-                        if (likelyPlace.getCount() < 10) {
+                        Place place = null;
+                        if (likelyPlace.getCount() < MAX_PLACES) {
                             count = likelyPlace.getCount();
                         } else {
-                            count = 10;
+                            count = MAX_PLACES;
                         }
 
                         //Inside this loop we put marker at all position we find
                         int i = 0;
                         mLikelyPlaceName = new String[count];
                         mLikelyPlaceLatlng = new LatLng[count];
+//                        mPlaceType = new Integer[count];
 
                         for (PlaceLikelihood placeLikelihood : likelyPlace) {
-                            mLikelyPlaceName[i] = (String) placeLikelihood.getPlace().getName();
-                            mLikelyPlaceLatlng[i] = placeLikelihood.getPlace().getLatLng();
+                            place = placeLikelihood.getPlace();
+                            //Check if the nearest place are restaurants
+                            for (int j = 0; j < place.getPlaceTypes().size(); j++) {
+                                if (place.getPlaceTypes().get(j) == Place.TYPE_RESTAURANT) {
+                                    mLikelyPlaceName[i] = place.getName().toString();
+                                    mLikelyPlaceLatlng[i] = place.getLatLng();
 
-                            //Add marker in every place found
-                            if (mLikelyPlaceLatlng.length != 0) {
-                                mMap.addMarker(new MarkerOptions()
-                                        .position(mLikelyPlaceLatlng[i])
-                                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_custom_marker)));
+                                    //Add marker in every place found
+                                    if (mLikelyPlaceLatlng.length != 0) {
+                                        mMap.addMarker(new MarkerOptions()
+                                                .position(mLikelyPlaceLatlng[i])
+                                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_custom_marker)));
 
-                                Log.d(TAG, "onComplete: show me Latlng marker" + mLikelyPlaceName[i] + " " + mLikelyPlaceName[i]);
+                                        Log.d(TAG, "onComplete: show me Latlng marker" + mLikelyPlaceName[i]
+                                                + " " + mLikelyPlaceName[i]
+                                                + "\n" + place.getPlaceTypes());
+                                    }
+                                }
                             }
+
 
                             i++;
                             if (i > (count - 1)) {
@@ -253,5 +287,20 @@ public class SecondMapActivity extends AppCompatActivity implements OnMapReadyCa
             getLocationPermission();
 
         }
+    }
+
+    //To finish
+    private void autoCompleteFeature() {
+        String query = "Restaurant";
+
+        AutocompleteFilter autocompleteFilter = new AutocompleteFilter.Builder()
+                .setTypeFilter(AutocompleteFilter.TYPE_FILTER_ESTABLISHMENT)
+                .build();
+
+        PendingResult<AutocompletePredictionBuffer> result =
+                Places.GeoDataApi.getAutocompletePredictions(mGoogleApiClient, query,
+                        mLatLngBounds, autocompleteFilter);
+
+
     }
 }
